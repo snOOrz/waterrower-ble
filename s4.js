@@ -19,8 +19,9 @@ var DEBUG = false;
 //      resolve  -> completed successfully (string)
 //      reject   -> not completed / failed (string)
 //      notify   -> update for each event (memory address) (event object literal)
-function S4() {
+function S4(hr_enabled) {
     var self = this;
+    self.hr_enabled = hr_enabled;
     self.port = null;
     self.pending = [];
     self.writer = null;
@@ -136,9 +137,9 @@ function S4() {
     };
 
     var memoryMap = {
-        "1A9": ["stroke_rate", "S"],
         "140": ["stroke_count", "D"],
         "088": ["watts", "D"],
+        "057": ["distance", "D"],
         "1A0": ["heart_rate", "D"]
     };
 
@@ -148,7 +149,9 @@ function S4() {
             for (var address in memoryMap) {
                 if (memoryMap.hasOwnProperty(address)) {
                     var element = memoryMap[address];
-                    self.readMemoryAddress(address, element[1]);
+                    if (this.hr_enabled || "heart_rate" !== element[0]) {
+                      self.readMemoryAddress(address, element[1]);
+                    }
                 }
             }
         }
@@ -281,9 +284,9 @@ S4.prototype.startRower = function(callback) {
   return function() {
     rower.findPort().then(function(comName) {
       console.log("[Init] Found WaterRower S4 on com port: " + comName);
-      var stroke_rate = 0;
       var stroke_count = 0;
       var watts = 0;
+      var distance = 0;
       rower.open(comName).then(function() {
         console.log('[Start] Start broadcasing WR data');
         rower.start().then(function(string) {
@@ -291,19 +294,17 @@ S4.prototype.startRower = function(callback) {
         }, function(string) {
             console.log('[End] Workout failed ...' + string);
         }, function(event) {
-            if ('stroke_rate' in event) {
-              stroke_rate = event.stroke_rate;
-            } else if ('stroke_count' in event
+            if ('stroke_count' in event
                 && event.stroke_count > stroke_count) {
               stroke_count= event.stroke_count;
-              var e = {
-                'watts': watts,
-                'rev_count': stroke_count
-              };
-              callback(e);
+              callback({'watts': watts, 'dist': distance, 'rev_count': stroke_count});
             } else if ('watts' in event) {
               if (event.watts > 0) {
                 watts = event.watts;
+              }
+            } else if ('distance' in event) {
+              if (event.distance > 0) {
+                distance = event.distance;
               }
             } else if ('heart_rate' in event) {
               callback(event);
@@ -326,13 +327,18 @@ S4.prototype.stopRower = function() {
 S4.prototype.fakeRower = function(callback) {
   console.log("[Init] Faking test data");
   var stroke_count = 0;
+  var distance = 0;
   var id = 0;
   var test = function() {
-    var bpm = Math.floor(Math.random() * 10 + 120);
-    callback({'heart_rate': bpm});
+    if (this.hr_enabled) {
+      var bpm = Math.floor(Math.random() * 10 + 120);
+      callback({'heart_rate': bpm});
+    }
+
     var watts = Math.floor(Math.random() * 10 + 120);
     stroke_count = stroke_count + 1;
-    callback({'watts': watts, 'rev_count': stroke_count});
+    distance = distance + 1;
+    callback({'watts': watts, 'dist': distance, 'rev_count': stroke_count});
     setTimeout(test, 666);
   };
   test();

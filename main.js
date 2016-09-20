@@ -2,12 +2,13 @@ var S4 = require('./s4');
 var peripheral = require('ble-cycling-power');
 var network = require('./network');
 var usb = require('./usb-peripheral');
+var HEART_RATE_ENABLED = false;
 
 var mainBle = function(testMode) {
-  var ble = new peripheral.BluetoothPeripheral('WaterRower S4');
+  var ble = new peripheral.BluetoothPeripheral('WaterRower S4', HEART_RATE_ENABLED);
 
   if (testMode) {
-    var rower = new S4();
+    var rower = new S4(HEART_RATE_ENABLED);
     rower.fakeRower(ble.notify);
   } else {
     var listener = new network.MessageListener(ble.notify);
@@ -17,7 +18,7 @@ var mainBle = function(testMode) {
 
 var mainUsb = function(callback, testMode) {
 
-  var rower = new S4();
+  var rower = new S4(HEART_RATE_ENABLED);
   if (testMode) {
     rower.fakeRower(callback());
   } else {
@@ -52,7 +53,7 @@ var main = function(args) {
     mainBle(testMode);
   } else {
     var bleNotify = function() {
-      var ble = new peripheral.BluetoothPeripheral('WaterRower S4');
+      var ble = new peripheral.BluetoothPeripheral('WaterRower S4', HEART_RATE_ENABLED);
 
       return ble.notify;
 
