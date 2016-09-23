@@ -137,10 +137,10 @@ function S4(hr_enabled) {
     };
 
     var memoryMap = {
-        "140": ["stroke_count", "D"],
         "088": ["watts", "D"],
         "057": ["distance", "D"],
-        "1A0": ["heart_rate", "D"]
+        "1A0": ["heart_rate", "D"],
+        "140": ["stroke_count", "D"]
     };
 
     this.strokeStartHandler = function () {
