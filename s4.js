@@ -45,7 +45,7 @@ function S4(hr_enabled) {
         return;
       }
       var string = self.pending.shift();
-      if (self.port) {
+      if (self.port && self.port.isOpen()) {
           var buffer = new Buffer(string + EOL);
           if (DEBUG) console.log('[OUT]: ' + buffer);
           self.port.write(buffer);
